@@ -1,6 +1,9 @@
 %{
-#define D 300
-#define W 301
+#define B 300
+#define O 301
+#define D 302
+#define H 303
+#define W 310
 #define X 399
 %}
 
@@ -18,7 +21,10 @@ JN		{ return 144; }
 JZ		{ return 160; }
 HLT		{ return 240; }
 
+1[01]*b|0b[01]+	{ return B; }
+0[0-7]*			{ return O; }
 [1-9][0-9]*		{ return D; }
+0x[0-9A-Fa-f]+	{ return H; }
 
 [ \n\t]+	{ return W; }
 .			{ return W; }
@@ -26,12 +32,21 @@ HLT		{ return 240; }
 
 %%
 
-// converte uma string de numero decimal em um inteiro, parando ao encontrar o primeiro caractere que não é um digito.
-int strToInt (char *str) {
-	int valor = 0;
+int charToDigit(char c) {
+	if(c >= '0' && c <= '9') return c - '0';
+	if(c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if(c >= 'A' && c <= 'F') return c - 'A' + 10;
+	return -1;
+}
 
-	while(*str >= '0' && *str <= '9') {
-		valor = valor * 10 + *(str++) - '0';
+// converte uma string de numero (base n) em um inteiro, 
+// parando ao encontrar o primeiro caractere que não é um digito na base especificada.
+int strToInt (char *str, int n) {
+	int valor = 0;
+	int digit;
+
+	while( (digit = charToDigit(*str++)) != -1 && digit < n ) {
+		valor = valor * n + digit;
 	}
 
 	return valor;
@@ -51,8 +66,17 @@ int main(int argc, char *argv[]){
 
 	while (( tipoToken = yylex() ) != X) {
 		switch (tipoToken) {
+			case B:
+				printf("numero binario: %d\n", strToInt(*yytext == '1' ? yytext : yytext + 2, 2));
+				break;
+			case O:
+				printf("numero octal: %d\n", strToInt(yytext, 8));
+				break;
 			case D:
-				printf("numero decimal: %d\n", strToInt(yytext));
+				printf("numero decimal: %d\n", strToInt(yytext, 10));
+				break;
+			case H:
+				printf("numero hexadecimal: %d\n", strToInt(yytext + 2, 16));
 				break;
 			case W: // ignora espaco em branco/indetacoes e quebras de linha
 				break;
