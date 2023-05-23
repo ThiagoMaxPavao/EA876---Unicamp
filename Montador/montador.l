@@ -26,6 +26,17 @@ HLT		{ return 240; }
 
 %%
 
+// converte uma string de numero decimal em um inteiro, parando ao encontrar o primeiro caractere que não é um digito.
+int strToInt (char *str) {
+	int valor = 0;
+
+	while(*str >= '0' && *str <= '9') {
+		valor = valor * 10 + *(str++) - '0';
+	}
+
+	return valor;
+}
+
 int main(int argc, char *argv[]){
 	FILE *fin;
 	int tipoToken;
@@ -38,10 +49,10 @@ int main(int argc, char *argv[]){
 	} else
 		yyin = stdin;
 
-	while (( tipoToken = yylex()) != X) {
+	while (( tipoToken = yylex() ) != X) {
 		switch (tipoToken) {
 			case D:
-				printf("numero decimal\n");
+				printf("numero decimal: %d\n", strToInt(yytext));
 				break;
 			case W: // ignora espaco em branco/indetacoes e quebras de linha
 				break;
