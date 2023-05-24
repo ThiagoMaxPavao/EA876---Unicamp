@@ -1,9 +1,6 @@
 %{
-#define B 300
-#define O 301
-#define D 302
-#define H 303
-#define W 310
+#define H 300
+#define W 301
 #define X 399
 %}
 
@@ -21,10 +18,7 @@ JN		{ return 144; }
 JZ		{ return 160; }
 HLT		{ return 240; }
 
-1[01]*b|0b[01]+	{ return B; }
-0[0-7]*			{ return O; }
-[1-9][0-9]*		{ return D; }
-0x[0-9A-Fa-f]+	{ return H; }
+[0-9A-Fa-f]+	{ return H; }
 
 [ \n\t]+	{ return W; }
 .			{ return W; }
@@ -39,23 +33,24 @@ int charToDigit(char c) {
 	return -1;
 }
 
-// converte uma string de numero (base n) em um inteiro, 
-// parando ao encontrar o primeiro caractere que não é um digito na base especificada.
-int strToInt (char *str, int n) {
+// converte uma string de numero hexadecimal em um inteiro, 
+// parando ao encontrar o primeiro caractere que não é um digito na base 16.
+int strToInt (char *str) {
 	int valor = 0;
 	int digit;
 
-	while( (digit = charToDigit(*str++)) != -1 && digit < n ) {
-		valor = valor * n + digit;
+	while( (digit = charToDigit(*str++)) != -1 ) {
+		valor = valor * 0x10 + digit;
 	}
 
 	return valor;
 }
 
 int main(int argc, char *argv[]){
-	FILE *fin;
-	int tipoToken;
+	FILE *fin, *fout;
+	int tipoToken, n_bytes;
 	
+	// Configura arquivo de entrada
 	if (argc == 2) {
 		if (fin = fopen(argv[1],"r"))
 			yyin = fin;
@@ -64,27 +59,34 @@ int main(int argc, char *argv[]){
 	} else
 		yyin = stdin;
 
-	while (( tipoToken = yylex() ) != X) {
+	// Configura arquivo de saida
+	fout = fopen("entrada.mem", "w");
+	fputs("\x03\x4E\x44\x52", fout);
+	n_bytes = 4;
+
+	// Extracao de tokens e montagem
+	while ( (tipoToken = yylex()) != X ) {
+		unsigned char byte;
 		switch (tipoToken) {
-			case B:
-				printf("numero binario: %d\n", strToInt(*yytext == '1' ? yytext : yytext + 2, 2));
-				break;
-			case O:
-				printf("numero octal: %d\n", strToInt(yytext, 8));
-				break;
-			case D:
-				printf("numero decimal: %d\n", strToInt(yytext, 10));
-				break;
 			case H:
-				printf("numero hexadecimal: %d\n", strToInt(yytext + 2, 16));
+				byte = strToInt(yytext);
 				break;
-			case W: // ignora espaco em branco/indetacoes e quebras de linha
-				break;
+			case W:
+				continue; // ignora espaco em branco/indetacoes e quebras de linha
 			default:
-				printf("instrucao: %d\n", tipoToken);
+				byte = tipoToken;
 				break;
 		}
+
+		fputc(byte, fout);
+		fputc(0x00, fout);
+		n_bytes += 2;
 	}
+
+	// completa o arquivo com zeros ate alcancar 516
+	while(n_bytes++ < 516) fputc(0x00, fout);
+
+	fclose(fout);
 
 	return 0;
 }
