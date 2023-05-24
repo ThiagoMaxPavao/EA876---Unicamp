@@ -72,7 +72,8 @@ int main(int argc, char *argv[]){
 				byte = strToInt(yytext);
 				break;
 			case W:
-				continue; // ignora espaco em branco/indetacoes e quebras de linha
+				continue; 	// ignora espaco em branco/indetacoes e quebras de linha.
+							// Alem de outros caracteres nao reconhecidos
 			default:
 				byte = tipoToken;
 				break;
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]){
 		n_bytes += 2;
 	}
 
-	// completa o arquivo com zeros ate alcancar 516
+	// Completa o arquivo com zeros ate alcancar 516
 	while(n_bytes++ < 516) fputc(0x00, fout);
 
 	fclose(fout);
