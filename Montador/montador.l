@@ -82,8 +82,10 @@ int main(int argc, char *argv[]){
 	if (argc == 2) {
 		if (fin = fopen(argv[1],"r"))
 			yyin = fin;
-		else
-			perror(argv[0]);
+		else {
+			perror(argv[1]);
+			return 2;
+		}
 	} else
 		yyin = stdin;
 
