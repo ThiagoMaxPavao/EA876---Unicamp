@@ -1,28 +1,37 @@
 %{
-#define H 300
-#define W 301
-#define X 399
+// instrucoes e opcodes
+#define NOP 0
+#define STA 16
+#define LDA 32
+#define ADD 48
+#define OR  64
+#define AND 80
+#define NOT 96
+#define JMP 128
+#define JN  144
+#define JZ  160
+#define HLT 240
+
+#define H 300 // numero hexadecimal, escrito sem 0x
+#define X 399 // fim do arquivo
 %}
 
 %%
 
-NOP		{ return 0; }
-STA		{ return 16; }
-LDA		{ return 32; }
-ADD		{ return 48; }
-OR		{ return 64; }
-AND		{ return 80; }
-NOT		{ return 96; }
-JMP		{ return 128; }
-JN		{ return 144; }
-JZ		{ return 160; }
-HLT		{ return 240; }
+NOP		{ return NOP; }
+STA		{ return STA; }
+LDA		{ return LDA; }
+ADD		{ return ADD; }
+OR		{ return OR;  }
+AND		{ return AND; }
+NOT		{ return NOT; }
+JMP		{ return JMP; }
+JN		{ return JN;  }
+JZ		{ return JZ;  }
+HLT		{ return HLT; }
 
-[0-9A-Fa-f]+	{ return H; }
-
-[ \n\t]+	{ return W; }
-.			{ return W; }
-<<EOF>>		{ return X; }
+[0-9A-Fa-f]+    { return H; }
+<<EOF>>		    { return X; }
 
 %%
 
@@ -46,9 +55,26 @@ int strToInt (char *str) {
 	return valor;
 }
 
+void montaNomeSaida(char *inName, char *outName) {
+	int i = 0;
+	char c;
+
+	do {
+		c = outName[i] = inName[i];
+		i++;
+	} while( c != '.' );
+
+	outName[i++] = 'm';
+	outName[i++] = 'e';
+	outName[i++] = 'm';
+
+	return;
+}
+
 int main(int argc, char *argv[]){
 	FILE *fin, *fout;
-	int tipoToken, n_bytes;
+	int tipoToken, index = 0;
+	char programBytes[516], outName[50], error = false;
 	
 	// Configura arquivo de entrada
 	if (argc == 2) {
@@ -59,34 +85,55 @@ int main(int argc, char *argv[]){
 	} else
 		yyin = stdin;
 
-	// Configura arquivo de saida
-	fout = fopen("entrada.mem", "w");
-	fputs("\x03\x4E\x44\x52", fout);
-	n_bytes = 4;
+	
+	// cabecalho do arquivo
+	programBytes[index++] = 0x03;
+	programBytes[index++] = 0x4E;
+	programBytes[index++] = 0x44;
+	programBytes[index++] = 0x52;
 
 	// Extracao de tokens e montagem
-	while ( (tipoToken = yylex()) != X ) {
-		unsigned char byte;
+	while ( (tipoToken = yylex()) != X && !error ) {
 		switch (tipoToken) {
-			case H:
-				byte = strToInt(yytext);
+			case NOP:
+            case NOT:
+            case HLT:
+                programBytes[index] = tipoToken;
+				index += 2;
 				break;
-			case W:
-				continue; 	// ignora espaco em branco/indetacoes e quebras de linha.
-							// Alem de outros caracteres nao reconhecidos
+			case STA:
+            case LDA:
+            case ADD:
+			case OR:
+            case AND:
+            case JMP:
+            case JN:
+            case JZ:
+                programBytes[index] = tipoToken;
+				index += 2;
+
+                if( yylex() != H ) error = 1;// faltando endereco em instrucao que exige
+                else {
+					programBytes[index] = strToInt(yytext); // tem endereco, insere no vetor
+					index += 2;
+				}
+				
+                break;
+            case H: // numero sem instrucao que o exigisse
+                error = 1;
+                break;
 			default:
-				byte = tipoToken;
 				break;
 		}
-
-		fputc(byte, fout);
-		fputc(0x00, fout);
-		n_bytes += 2;
 	}
 
-	// Completa o arquivo com zeros ate alcancar 516
-	while(n_bytes++ < 516) fputc(0x00, fout);
+    if(error) return 1; // retorna codigo de erro caso tenha ocorrido. Sem criar arquivo de saida
 
+	// Caso nao haja erro no codigo
+	// Escreve no arquivo de saida
+	montaNomeSaida(argv[1], outName);
+	fout = fopen(outName, "w");
+	fwrite(programBytes, 1, 516, fout);
 	fclose(fout);
 
 	return 0;
