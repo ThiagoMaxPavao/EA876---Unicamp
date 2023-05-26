@@ -1,0 +1,12 @@
+NOP
+
+STA 20
+LDA 30
+ADD 10 
+OR 20
+AND 30 
+NOT 
+JMP 20
+JN a
+JZ 0
+HLT
