@@ -67,6 +67,7 @@ void montaNomeSaida(char *inName, char *outName) {
 	outName[i++] = 'm';
 	outName[i++] = 'e';
 	outName[i++] = 'm';
+	outName[i++] = 0;
 
 	return;
 }
@@ -74,7 +75,8 @@ void montaNomeSaida(char *inName, char *outName) {
 int main(int argc, char *argv[]){
 	FILE *fin, *fout;
 	int tipoToken, index = 0;
-	char programBytes[516], outName[50], error = false;
+	char programBytes[516] = {0}, // inicializa vetor preenchido com zeros
+		 outName[50], error = 0;
 	
 	// Configura arquivo de entrada
 	if (argc == 2) {
@@ -85,7 +87,6 @@ int main(int argc, char *argv[]){
 	} else
 		yyin = stdin;
 
-	
 	// cabecalho do arquivo
 	programBytes[index++] = 0x03;
 	programBytes[index++] = 0x4E;
@@ -127,7 +128,10 @@ int main(int argc, char *argv[]){
 		}
 	}
 
-    if(error) return 1; // retorna codigo de erro caso tenha ocorrido. Sem criar arquivo de saida
+    if(error) { // retorna codigo de erro caso tenha ocorrido. Sem criar arquivo de saida
+		printf("Erro no codigo. Encerrando...\n");
+		return 1;
+	}
 
 	// Caso nao haja erro no codigo
 	// Escreve no arquivo de saida
